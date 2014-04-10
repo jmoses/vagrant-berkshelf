@@ -29,12 +29,19 @@ module Berkshelf
       #   chef server to upload cookbooks when using the chef client provisioner
       attr_accessor :client_key
 
+      # @return [Array<String>]
+      #   additional cookbook roots for cookbooks not managed via Berkshelf. The
+      #   paths will have "/cookbooks" appended to them, and must exist on the VM
+      #   at the time of the chef_solo run
+      attr_accessor :additional_cookbook_roots
+
       def initialize
         super
 
         @berksfile_path = File.join(Dir.pwd, Berkshelf::DEFAULT_FILENAME)
         @except         = Array.new
         @only           = Array.new
+        @additional_cookbook_roots = Array.new
         @node_name      = Berkshelf::Config.instance.chef.node_name
         @client_key     = Berkshelf::Config.instance.chef.client_key
         @enabled        = File.exist?(@berksfile_path)
@@ -48,6 +55,14 @@ module Berkshelf
       # @param [String] value
       def client_key=(value)
         @client_key = value
+      end
+
+      # @param [Array<String>] values
+      def additional_cookbook_roots(value)
+        # If we don't mangle the parameters here, Vagrant will want the path
+        # to exist on the host, and that's not what we want.
+
+        @additional_cookbook_roots = Array(value).map {|path| [:vm, path] }
       end
 
       alias_method :to_hash, :instance_variables_hash
